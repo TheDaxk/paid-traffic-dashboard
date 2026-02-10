@@ -77,9 +77,9 @@ div[data-testid="metric-container"]{
     unsafe_allow_html=True,
 )
 
-st.title(os.getenv("APP_TITLE", "Relatório de Tráfego Pago"))
+st.title(os.getenv("APP_TITLE", "Vivendas Do Joia"))
 
-# ---------- Clients ----------
+# ---------- Clients (precisa vir ANTES do período, pra descobrir min/max) ----------
 clients = q("select id, name from clients order by name asc")
 if clients.empty:
     st.info("Nenhum cliente cadastrado. Crie uma linha na tabela `clients` no Supabase.")
@@ -103,27 +103,74 @@ if minmax.empty or pd.isna(minmax.iloc[0]["min_date"]):
 min_date = minmax.iloc[0]["min_date"]
 max_date = minmax.iloc[0]["max_date"]
 
-start, end = st.sidebar.date_input(
-    "Período",
-    value=(min_date, max_date),
-    min_value=min_date,
-    max_value=max_date,
+platforms = st.sidebar.multiselect("Plataformas", ["meta", "google"], default=["meta", "google"])
+search_campaign = st.sidebar.text_input("Buscar campanha (contém)", placeholder="ex: Mensagens")
+
+# ---------- Período no topo (mobile-friendly) ----------
+st.markdown("### 📅 Período")
+
+preset = st.radio(
+    "Atalho rápido",
+    ["7 dias", "15 dias", "30 dias", "Todo período", "Personalizado"],
+    horizontal=True,
+    index=0,
+    key="preset_choice",
 )
 
-platforms = st.sidebar.multiselect("Plataformas", ["meta", "google"], default=["meta", "google"])
+# Defaults por preset (sempre em date)
+_min = pd.to_datetime(min_date).date()
+_max = pd.to_datetime(max_date).date()
+
+default_start, default_end = _min, _max
+if preset == "7 dias":
+    default_start, default_end = (pd.to_datetime(_max) - pd.Timedelta(days=6)).date(), _max
+elif preset == "15 dias":
+    default_start, default_end = (pd.to_datetime(_max) - pd.Timedelta(days=14)).date(), _max
+elif preset == "30 dias":
+    default_start, default_end = (pd.to_datetime(_max) - pd.Timedelta(days=29)).date(), _max
+elif preset == "Todo período":
+    default_start, default_end = _min, _max
+
+# Se o usuário mudou o preset, atualiza as datas no session_state (evita "não muda" no mobile)
+if st.session_state.get("_last_preset") != preset:
+    st.session_state["start_date"] = default_start
+    st.session_state["end_date"] = default_end
+    st.session_state["_last_preset"] = preset
+
+col_p1, col_p2 = st.columns([1, 1])
+with col_p1:
+    start = st.date_input(
+        "Data inicial",
+        value=st.session_state.get("start_date", default_start),
+        min_value=_min,
+        max_value=_max,
+        key="start_date",
+    )
+
+with col_p2:
+    end = st.date_input(
+        "Data final",
+        value=st.session_state.get("end_date", default_end),
+        min_value=_min,
+        max_value=_max,
+        key="end_date",
+    )
+
+if start > end:
+    st.error("⚠️ A data inicial não pode ser maior que a final.")
+    st.stop()
+
+# ---------- Build filters ----------
 platform_filter = ""
 params = {"client_id": client_id, "start": start, "end": end}
 if platforms:
     platform_filter = "and platform = any(:platforms)"
     params["platforms"] = platforms
 
-search_campaign = st.sidebar.text_input("Buscar campanha (contém)", placeholder="ex: Mensagens")
-
 campaign_filter = ""
 if search_campaign.strip():
     campaign_filter = "and lower(coalesce(campaign_name,'')) like :q"
     params["q"] = f"%{search_campaign.strip().lower()}%"
-
 # ---------- Data query ----------
 df = q(
     f"""
