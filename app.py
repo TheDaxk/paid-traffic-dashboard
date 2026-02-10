@@ -115,7 +115,8 @@ header, footer {visibility: hidden;}
   to { opacity: 1; transform: translateY(0); }
 }
 </style>
-""", unsafe_allow_html=True)
+""", 
+unsafe_allow_html=True)
 
 st.title(os.getenv("APP_TITLE", "Relatório de Tráfego Pago"))
 
