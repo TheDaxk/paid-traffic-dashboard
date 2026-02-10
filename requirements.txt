@@ -1,0 +1,9 @@
+streamlit==1.41.1
+pandas==2.2.3
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+python-dotenv==1.0.1
+requests==2.32.3
+
+# Google Ads (opcional, quando for conectar)
+google-ads==26.0.1
