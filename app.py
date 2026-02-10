@@ -62,7 +62,8 @@ def delta_pct(curr: float, prev: float) -> float | None:
 st.markdown("""
 <style>
 /* reduzir ruído */
-header, footer {visibility: hidden;}
+header {visibility: hidden;}
+footer {visibility: hidden;}
 
 /* ---------- KPI GRID (força 2 colunas no mobile) ---------- */
 .kpi-grid{
@@ -115,8 +116,7 @@ header, footer {visibility: hidden;}
   to { opacity: 1; transform: translateY(0); }
 }
 </style>
-""", 
-unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 st.title(os.getenv("APP_TITLE", "Relatório de Tráfego Pago"))
 
@@ -235,21 +235,20 @@ with tab1:
     cards = []
     for i, (title, value, d) in enumerate(kpis):
         delay = i * 0.06
-        cards.append(f'''
-          <div class="kpi-card" style="animation-delay:{delay:.2f}s">
-            <div class="kpi-title">{title}</div>
-            <div class="kpi-value">{value}</div>
-            {_delta_html(d)}
-          </div>
-        ''')
+        cards.append(
+            f'<div class="kpi-card" style="animation-delay:{delay:.2f}s">'
+            f'<div class="kpi-title">{title}</div>'
+            f'<div class="kpi-value">{value}</div>'
+            f'{_delta_html(d)}'
+            f'</div>'
+        )
 
-    st.markdown(f"""
-    <div class="kpi-grid">
-      {''.join(cards)}
-    </div>
-    """, unsafe_allow_html=True)
+    # IMPORTANTÍSSIMO: sem triple-quote indentado (evita virar code block)
+    html = f'<div class="kpi-grid">{"".join(cards)}</div>'
+    st.markdown(html, unsafe_allow_html=True)
 
     st.divider()
+
     left, right = st.columns([2, 2])
 
     with left:
