@@ -133,7 +133,7 @@ st.sidebar.header("Filtros")
 client_name = st.sidebar.selectbox("Cliente", list(client_name_to_id.keys()))
 client_id = client_name_to_id[client_name]
 
-# ---------- Período no topo (mobile-friendly) ----------
+# ---------- Período no topo (selecionável e mobile-friendly) ----------
 minmax = fetch_df(
     "select min(date) as min_date, max(date) as max_date from daily_metrics where client_id = :client_id",
     {"client_id": client_id}
@@ -146,35 +146,34 @@ if minmax.empty or pd.isna(minmax.iloc[0]["min_date"]):
 min_date = pd.to_datetime(minmax.iloc[0]["min_date"]).date()
 max_date = pd.to_datetime(minmax.iloc[0]["max_date"]).date()
 
-# fixa sempre em 7 dias (últimos 7 disponíveis no banco)
-end = max_date
-start = (pd.to_datetime(end) - pd.Timedelta(days=6)).date()
+# Default: últimos 7 dias
+default_end = max_date
+default_start = (pd.to_datetime(default_end) - pd.Timedelta(days=6)).date()
 
-# mostra na tela (sem sidebar)
-p1, p2 = st.columns(2)
-p1.caption("Período")
-p1.write(f"**{start.strftime('%d/%m/%Y')} → {end.strftime('%d/%m/%Y')}**")
-p2.caption("Atualizado até")
-p2.write(f"**{end.strftime('%d/%m/%Y')}**")
+st.subheader("Período")
 
-
-minmax = q(
-    "select min(date) as min_date, max(date) as max_date from daily_metrics where client_id = :client_id",
-    {"client_id": client_id}
+c1, c2 = st.columns(2)
+start = c1.date_input(
+    "Data inicial",
+    value=default_start,
+    min_value=min_date,
+    max_value=max_date,
+    key="start_top",
 )
-if minmax.empty or pd.isna(minmax.iloc[0]["min_date"]):
-    st.warning("Esse cliente ainda não tem dados em `daily_metrics`. Rode o ETL para popular.")
+end = c2.date_input(
+    "Data final",
+    value=default_end,
+    min_value=min_date,
+    max_value=max_date,
+    key="end_top",
+)
+
+if start > end:
+    st.error("A data inicial não pode ser maior que a final.")
     st.stop()
 
 min_date = minmax.iloc[0]["min_date"]
 max_date = minmax.iloc[0]["max_date"]
-
-start, end = st.sidebar.date_input(
-    "Período",
-    value=(min_date, max_date),
-    min_value=min_date,
-    max_value=max_date
-)
 
 platforms = st.sidebar.multiselect("Plataformas", ["meta", "google"], default=["meta", "google"])
 platform_filter = ""
