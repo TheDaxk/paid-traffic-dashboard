@@ -62,45 +62,63 @@ def delta_pct(curr: float, prev: float) -> float | None:
     return (curr - prev) / prev * 100
 
 # ---------- CSS ----------
-st.markdown(
-    """
+st.markdown("""
 <style>
+/* reduzir ruído */
 header, footer {visibility: hidden;}
-div[data-testid="metric-container"]{
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  padding: 14px 14px 10px 14px;
-  border-radius: 14px;
-}
-div[data-testid="metric-container"]{
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  padding: 14px 14px 10px 14px;
-  border-radius: 14px;
 
-  opacity: 0;
-  transform: translateY(12px);
-  animation: fadeUp .45s ease-out forwards;
+/* ---------- KPI GRID (mobile first real) ---------- */
+.kpi-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 6px;
 }
 
-div[data-testid="metric-container"]:nth-child(1){animation-delay:.00s;}
-div[data-testid="metric-container"]:nth-child(2){animation-delay:.05s;}
-div[data-testid="metric-container"]:nth-child(3){animation-delay:.10s;}
-div[data-testid="metric-container"]:nth-child(4){animation-delay:.15s;}
-div[data-testid="metric-container"]:nth-child(5){animation-delay:.20s;}
-div[data-testid="metric-container"]:nth-child(6){animation-delay:.25s;}
-
-@keyframes fadeUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
+@media (max-width: 640px){
+  .kpi-grid{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
+.kpi-card{
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 12px 12px 10px 12px;
+
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeUp .45s ease-out forwards;
+}
+
+.kpi-title{
+  font-size: 12px;
+  opacity: .75;
+  margin-bottom: 4px;
+}
+
+.kpi-value{
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.kpi-delta{
+  font-size: 12px;
+  margin-top: 6px;
+  opacity: .85;
+}
+
+.kpi-delta.pos{ color: #30c48d; }
+.kpi-delta.neg{ color: #ff5c5c; }
+.kpi-delta.neu{ color: rgba(255,255,255,0.55); }
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
 </style>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
 st.title(os.getenv("APP_TITLE", "Vivendas Do Joia"))
 
@@ -259,7 +277,7 @@ k = compute_kpis(df)
 k_prev = compute_kpis(df_prev)
 
 # ---------- Tabs ----------
-tab1, tab2, tab3 = st.tabs(["📌 Visão Geral", "🎯 Campanhas", "🧾 Dados"])
+tab1 = st.tabs(["📌 Visão Geral"])
 
 with tab1:
     # ---------- KPIs (grid mobile-first) ----------
