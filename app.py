@@ -133,6 +133,31 @@ st.sidebar.header("Filtros")
 client_name = st.sidebar.selectbox("Cliente", list(client_name_to_id.keys()))
 client_id = client_name_to_id[client_name]
 
+# ---------- Período no topo (mobile-friendly) ----------
+minmax = fetch_df(
+    "select min(date) as min_date, max(date) as max_date from daily_metrics where client_id = :client_id",
+    {"client_id": client_id}
+)
+
+if minmax.empty or pd.isna(minmax.iloc[0]["min_date"]):
+    st.warning("Esse cliente ainda não tem dados em `daily_metrics`. Rode o ETL para popular.")
+    st.stop()
+
+min_date = pd.to_datetime(minmax.iloc[0]["min_date"]).date()
+max_date = pd.to_datetime(minmax.iloc[0]["max_date"]).date()
+
+# fixa sempre em 7 dias (últimos 7 disponíveis no banco)
+end = max_date
+start = (pd.to_datetime(end) - pd.Timedelta(days=6)).date()
+
+# mostra na tela (sem sidebar)
+p1, p2 = st.columns(2)
+p1.caption("Período")
+p1.write(f"**{start.strftime('%d/%m/%Y')} → {end.strftime('%d/%m/%Y')}**")
+p2.caption("Atualizado até")
+p2.write(f"**{end.strftime('%d/%m/%Y')}**")
+
+
 minmax = q(
     "select min(date) as min_date, max(date) as max_date from daily_metrics where client_id = :client_id",
     {"client_id": client_id}
