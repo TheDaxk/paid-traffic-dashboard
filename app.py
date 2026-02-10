@@ -72,6 +72,31 @@ div[data-testid="metric-container"]{
   padding: 14px 14px 10px 14px;
   border-radius: 14px;
 }
+div[data-testid="metric-container"]{
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 14px 14px 10px 14px;
+  border-radius: 14px;
+
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeUp .45s ease-out forwards;
+}
+
+div[data-testid="metric-container"]:nth-child(1){animation-delay:.00s;}
+div[data-testid="metric-container"]:nth-child(2){animation-delay:.05s;}
+div[data-testid="metric-container"]:nth-child(3){animation-delay:.10s;}
+div[data-testid="metric-container"]:nth-child(4){animation-delay:.15s;}
+div[data-testid="metric-container"]:nth-child(5){animation-delay:.20s;}
+div[data-testid="metric-container"]:nth-child(6){animation-delay:.25s;}
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 </style>
 """,
     unsafe_allow_html=True,
@@ -237,23 +262,39 @@ k_prev = compute_kpis(df_prev)
 tab1, tab2, tab3 = st.tabs(["📌 Visão Geral", "🎯 Campanhas", "🧾 Dados"])
 
 with tab1:
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
-
+    # ---------- KPIs (grid mobile-first) ----------
     d_spend = delta_pct(k["spend"], k_prev["spend"])
-    d_imps = delta_pct(k["impressions"], k_prev["impressions"])
     d_clicks = delta_pct(k["clicks"], k_prev["clicks"])
+    d_imps = delta_pct(k["impressions"], k_prev["impressions"])
     d_cpc = delta_pct(k["cpc"], k_prev["cpc"])
     d_convos = delta_pct(k["conversations"], k_prev["conversations"])
     d_cpconv = delta_pct(k["cpconv"], k_prev["cpconv"])
 
-    c1.metric("Investimento", brl(k["spend"]), (f"{d_spend:+.1f}%" if d_spend is not None else None))
-    c2.metric("Impressões", intfmt(k["impressions"]), (f"{d_imps:+.1f}%" if d_imps is not None else None))
-    c3.metric("Cliques", intfmt(k["clicks"]), (f"{d_clicks:+.1f}%" if d_clicks is not None else None))
-    c4.metric("CPC", brl(k["cpc"]), (f"{d_cpc:+.1f}%" if d_cpc is not None else None))
-    c5.metric("Conversas", intfmt(k["conversations"]), (f"{d_convos:+.1f}%" if d_convos is not None else None))
-    c6.metric("Custo / Conversa", brl(k["cpconv"]), (f"{d_cpconv:+.1f}%" if d_cpconv is not None else None))
+    kpis = [
+        ("Investimento", brl(k["spend"]), d_spend),
+        ("Impressões", intfmt(k["impressions"]), d_imps),
+        ("Cliques", intfmt(k["clicks"]), d_clicks),
+        ("CPC", brl(k["cpc"]), d_cpc),
+        ("Conversas", intfmt(k["conversations"]), d_convos),
+        ("Custo / Conversa", brl(k["cpconv"]), d_cpconv),
+    ]
+
+    def fmt_delta(d):
+        return f"{d:+.1f}%" if d is not None else None
+
+    # 2 KPIs por linha (mobile perfeito)
+    cols_per_row = 2
+
+    for i in range(0, len(kpis), cols_per_row):
+        row = st.columns(cols_per_row)
+        for j in range(cols_per_row):
+            idx = i + j
+            if idx < len(kpis):
+                label, value, delta = kpis[idx]
+                row[j].metric(label, value, fmt_delta(delta))
 
     st.divider()
+
     left, right = st.columns([2, 2])
 
     with left:
